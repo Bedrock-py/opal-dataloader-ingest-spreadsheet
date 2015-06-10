@@ -10,18 +10,14 @@
 # permission of the Georgia Tech Research Institute.
 #****************************************************************/
 
-from ..ingest_utils import IngestModule 
-from ..DetectDatatype import DetectDatatype
+# from ..DetectDatatype import DetectDatatype
 import os, socket, datetime, time
 import csv, xlrd
-from ..utils import *
 import re
+from dataloader.utils import *
+from dataloader.opals.spreadsheet_utils import *
 
-
-def get_classname():
-    return 'Spreadsheet'
-
-class Spreadsheet(IngestModule):
+class Spreadsheet(Ingest):
     def __init__(self):
         super(Spreadsheet, self).__init__()
         self.name = 'CSV/Microsoft Excel'
@@ -251,7 +247,7 @@ class Spreadsheet(IngestModule):
             #set a fake range
             obj['range'] = [-1,-1]
             #run the detect algorithm
-            detect = DetectDatatype(obj)
+            # detect = DetectDatatype(obj)
 
             #get suggestions
             # obj['suggestions'] = detect.getSuggestions()
