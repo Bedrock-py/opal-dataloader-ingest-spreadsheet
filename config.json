@@ -1,0 +1,15 @@
+{ "opal-dataloader-ingest-spreadsheet": 
+        {
+            "description": "Ingests data in spreadsheet formats (csv and xls[x])",
+            "host": "github.gatech.edu",
+            "repo": "Bedrock/opal-dataloader-ingest-spreadsheet.git",
+            "units": "Spreadsheet.py",
+            "supports": "spreadsheet_utils.py",
+            "python_dependencies": "xlrd",
+            "system_dependencies": "",
+            "api": "dataloader",
+            "interface": "ingest",
+            "installation_script": ""
+
+        }
+}
