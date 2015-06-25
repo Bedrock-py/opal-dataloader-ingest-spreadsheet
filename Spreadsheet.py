@@ -17,6 +17,9 @@ import re
 from dataloader.utils import *
 from dataloader.opals.spreadsheet_utils import *
 
+import logging, sys
+logging.basicConfig(stream=sys.stderr)
+
 class Spreadsheet(Ingest):
     def __init__(self):
         super(Spreadsheet, self).__init__()
@@ -131,7 +134,13 @@ class Spreadsheet(Ingest):
             for i, feature in enumerate(posted_data['matrixFeaturesOriginal']):
                 # if feature in matirxFilters:
                 #     filters = matrixFilters[feature]
-                col = df[feature].values.tolist()
+                df_feature = int(feature) if int(feature) == i else feature
+
+                try:
+                    col = df[df_feature].values.tolist()
+                except:
+                    print "Unable to find feature", feature, "in dataframe. Available columns: ", df.columns.values.tolist()
+                    raise
                 #     col, matrixTypes[i] = self.apply_filter(filters['filter_id'], filters['parameters_spec'], col) 
                 #handle before filters
                 if len(posted_data['matrixFilters'][feature]) > 0: #filters were selected
@@ -217,7 +226,7 @@ class Spreadsheet(Ingest):
                 header = examples_lines.pop(0)
 
             else:
-                header = [str(x) for x in range(1,len(examples_lines[0]) + 1)]
+                header = [str(x) for x in range(0,len(examples_lines[0]))]
 
         schema = []
         # for each column

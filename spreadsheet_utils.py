@@ -82,15 +82,21 @@ def appendOutput(rootpath, fileName, outputData):
 #use pandas to load the csv file into the dataframe, 
 #using a header if appropriate
 def loadMatrix(filepath):
+    
     with open(filepath, 'rbU') as csvfile:
         snippet = csvfile.read(2048)
         sniffer = csv.Sniffer()
         dialect = sniffer.sniff(snippet)
 
-    if sniffer.has_header(snippet):
-        df = pd.read_csv(filepath, dialect=dialect)
+    try:
+        has_header = sniffer.has_header(snippet)
+    except CParserError:
+        has_header = True
+
+    if has_header:
+        df = pd.read_csv(filepath, dialect=dialect, error_bad_lines=False)
     else:
-        df = pd.read_csv(filepath, dialect=dialect, header=None)
+        df = pd.read_csv(filepath, dialect=dialect, header=None, error_bad_lines=False)
 
     return df
 
