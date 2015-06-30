@@ -134,7 +134,10 @@ class Spreadsheet(Ingest):
             for i, feature in enumerate(posted_data['matrixFeaturesOriginal']):
                 # if feature in matirxFilters:
                 #     filters = matrixFilters[feature]
-                df_feature = int(feature) if int(feature) == i else feature
+                try:
+		    df_feature = int(feature) if int(feature) == i else feature
+		except ValueError:
+		    df_feature = feature
 
                 try:
                     col = df[df_feature].values.tolist()
