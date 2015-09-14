@@ -79,11 +79,34 @@ def load_matrix(filepath):
         has_header = sniffer.has_header(snippet)
     except CParserError:
         has_header = True
+
     if has_header:
-        df = pd.read_csv(filepath, dialect=dialect, error_bad_lines=False)
+        df = pd.read_csv(filepath, error_bad_lines=False, header=None, skiprows=1)
+        df.columns = get_header(filepath, '')
     else:
-        df = pd.read_csv(filepath, dialect=dialect, header=None, error_bad_lines=False)
+        df = pd.read_csv(filepath,header=None, error_bad_lines=False)
     return df
+
+def get_header(filepath, dialect):
+    sniffer = csv.Sniffer()
+    with open(filepath, 'rbU') as csvfile:
+        snippet = csvfile.read(2048)
+        if dialect == '':
+            dialect = sniffer.sniff(snippet)
+        csvfile.seek(0)
+        reader = csv.reader(csvfile, dialect)
+        examples_lines = []
+        for i,line in enumerate(reader):
+            if i < 2:
+                examples_lines.append(line)
+            else:
+                break
+        # get the header
+        if sniffer.has_header(snippet):
+            header = examples_lines.pop(0)
+        else:
+            header = [str(x) for x in range(0,len(examples_lines[0]))]
+    return header
 
 # write the output files associated with each loaded file
 # matrix.csv, features.txt, features_original.txt, and any non-numeric fields' mappings
