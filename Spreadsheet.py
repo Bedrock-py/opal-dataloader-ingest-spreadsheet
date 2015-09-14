@@ -98,7 +98,7 @@ class Spreadsheet(Ingest):
             matrices, filters = self.apply_before_filters(posted_data, src)
             for i, feature in enumerate(posted_data['matrixFeaturesOriginal']):
                 try:
-                    df_feature = int(feature) if int(feature) == i else feature
+                    df_feature = int(feature)
                 except ValueError:
                     df_feature = feature
                 try:
@@ -168,6 +168,9 @@ class Spreadsheet(Ingest):
     def get_header(self, filepath, dialect):
         sniffer = csv.Sniffer()
         with open(filepath, 'rbU') as csvfile:
+            # retain a sample line for use later
+            sample = csvfile.readline()
+            csvfile.seek(0)
             snippet = csvfile.read(2048)
             if dialect == '':
                 dialect = sniffer.sniff(snippet)
@@ -186,18 +189,46 @@ class Spreadsheet(Ingest):
                 header = examples_lines.pop(0)
             else:
                 header = [str(x) for x in range(0,len(examples_lines[0]))]
+                # sometimes a floating point number like 1.4 is mistaken for two elements;
+                # see if a line can be converted to a float point number, and if so
+                # ensure that the number of header elements matches
+                try:
+                    float(sample)
+                    examples_lines = []
+                    csvfile.seek(0)
+                    for i, line in enumerate(csvfile):
+                        if i > 0 and i < 10:
+                            examples_lines.append([line.rstrip()])
+                    header = [str(x) for x in range(0,len(examples_lines[0]))]
+                # must not be able to convert the line to a numeric element
+                except ValueError:
+                    pass
+            # handle single column instance when it has a header
+            if len(examples_lines[0]) != len(header):
+                examples_lines = []
+                csvfile.seek(0)
+                for i, line in enumerate(csvfile):
+                    if i > 0 and i < 10:
+                        examples_lines.append([line.rstrip()])
         return examples_lines, header
 
     # extract the schema from the dataset
     def get_CSV_schema(self, filepath, dialect=''):
         examples_lines, header = self.get_header(filepath, dialect)
+        # raise Exception(header)
         schema = []
         # for each column
         for i in range(len(examples_lines[0])):
             # represents a single column/field
             obj = {} 
             obj['examples'] = [examples_lines[j][i] for j in range(len(examples_lines))]
-            obj['type'] = ['Numeric'] if isinstance(obj['examples'][0], float) else ['String']
+            # see if an element can be converted to a float and set the datatype to Numeric; 
+            # set type as String if otherwise
+            try:
+                float(obj['examples'][0])
+                obj['type'] = ['Numeric']
+            except ValueError:
+                obj['type'] = ['String']
             obj['key'] = obj['key_usr'] = header[i]            
             obj['range'] = [-1,-1]
             obj['suggestions'] = obj['options'] = self.get_filters(obj['type'][0])
