@@ -25,6 +25,7 @@ class Spreadsheet(Ingest):
         self.name = 'CSV/Microsoft Excel'
         self.description = 'Loads data from CSV or Microsft Excel spreadsheets.'
         self.parameters_spec = [{ "name" : "file", "value" : ".csv,.xls,.xlsx", "type" : "file" }]
+        self.NUM_EXAMPLES = 10
 
     def explore(self, filepath):
         # check to see if csv or xls[x]
@@ -179,7 +180,7 @@ class Spreadsheet(Ingest):
             i = 0
             examples_lines = []
             for line in reader:
-                if i < 10:
+                if i < self.NUM_EXAMPLES:
                     examples_lines.append(line)
                     i += 1
                 else:
@@ -197,7 +198,7 @@ class Spreadsheet(Ingest):
                     examples_lines = []
                     csvfile.seek(0)
                     for i, line in enumerate(csvfile):
-                        if i > 0 and i < 10:
+                        if i > 0 and i < self.NUM_EXAMPLES:
                             examples_lines.append([line.rstrip()])
                     header = [str(x) for x in range(0,len(examples_lines[0]))]
                 # must not be able to convert the line to a numeric element
@@ -208,7 +209,7 @@ class Spreadsheet(Ingest):
                 examples_lines = []
                 csvfile.seek(0)
                 for i, line in enumerate(csvfile):
-                    if i > 0 and i < 10:
+                    if i > 0 and i < self.NUM_EXAMPLES:
                         examples_lines.append([line.rstrip()])
         return examples_lines, header
 
