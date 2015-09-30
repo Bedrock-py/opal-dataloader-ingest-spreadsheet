@@ -18,6 +18,9 @@ import xlrd
 import re
 import os
 import traceback
+import pandas as pd
+from collections import Counter
+from itertools import islice
 
 class Spreadsheet(Ingest):
     def __init__(self):
@@ -26,6 +29,9 @@ class Spreadsheet(Ingest):
         self.description = 'Loads data from CSV or Microsft Excel spreadsheets.'
         self.parameters_spec = [{ "name" : "file", "value" : ".csv,.xls,.xlsx", "type" : "file" }]
         self.NUM_EXAMPLES = 10
+        self.NUM_SAMPLES = 100000
+        self.NUM_UNIQUE = 10
+
 
     def explore(self, filepath):
         # check to see if csv or xls[x]
@@ -77,6 +83,7 @@ class Spreadsheet(Ingest):
                         return 'Malformed CSV file.', 406
                     else:
                         schemas[sheetname] = schema
+
             if len(schemas) < 1:
                 print schemas
                 return ('Unable to extract usable CSV from the XLS[X] file.', 406)
@@ -189,7 +196,7 @@ class Spreadsheet(Ingest):
             if sniffer.has_header(snippet):
                 header = examples_lines.pop(0)
             else:
-                header = [str(x) for x in range(0,len(examples_lines[0]))]
+                header = [str(x+1) for x in range(0,len(examples_lines[0]))]
                 # sometimes a floating point number like 1.4 is mistaken for two elements;
                 # see if a line can be converted to a float point number, and if so
                 # ensure that the number of header elements matches
@@ -200,7 +207,7 @@ class Spreadsheet(Ingest):
                     for i, line in enumerate(csvfile):
                         if i > 0 and i < self.NUM_EXAMPLES:
                             examples_lines.append([line.rstrip()])
-                    header = [str(x) for x in range(0,len(examples_lines[0]))]
+                    header = [str(x+1) for x in range(0,len(examples_lines[0]))]
                 # must not be able to convert the line to a numeric element
                 except ValueError:
                     pass
@@ -213,28 +220,40 @@ class Spreadsheet(Ingest):
                         examples_lines.append([line.rstrip()])
         return examples_lines, header
 
+    def get_size(self, filepath):
+        with open(filepath, 'rbU') as f:
+            row_count = sum(1 for row in f)
+            return row_count
+
     # extract the schema from the dataset
     def get_CSV_schema(self, filepath, dialect=''):
         examples_lines, header = self.get_header(filepath, dialect)
-        # raise Exception(header)
-        schema = []
-        # for each column
-        for i in range(len(examples_lines[0])):
-            # represents a single column/field
-            obj = {} 
-            obj['examples'] = [examples_lines[j][i] for j in range(len(examples_lines))]
-            # see if an element can be converted to a float and set the datatype to Numeric; 
-            # set type as String if otherwise
-            try:
-                float(obj['examples'][0])
-                obj['type'] = ['Numeric']
-            except ValueError:
-                obj['type'] = ['String']
-            obj['key'] = obj['key_usr'] = header[i]            
-            obj['range'] = [-1,-1]
-            obj['suggestions'] = obj['options'] = self.get_filters(obj['type'][0])
-            obj['suggestion'] = self.get_best_filter(obj['type'][0], header[i], obj['examples'][0])
-            # add to schema, then repeat for next column
-            schema.append(obj)
+        size = self.get_size(filepath)
+        sampled = size > self.NUM_SAMPLES
+        if header[0] == '1':
+            data = pd.read_csv(filepath, header=None, nrows=self.NUM_SAMPLES)
+        else:
+            with open(filepath, 'rbU') as f:
+                data = pd.read_csv(f, nrows=self.NUM_SAMPLES)
+        numeric = data.describe()
+        meta = {}
+        for i, column in enumerate(data.columns):
+            if column in numeric.columns:
+                meta[header[i]] = {key:value for key, value in dict(numeric[column]).iteritems() if key != 'count' }
+                type_ = 'Numeric'
+            else:
+                counts = Counter(data[column])
+                if len(counts) > self.NUM_UNIQUE:
+                    counts = dict(islice(counts.iteritems(), self.NUM_UNIQUE))
+                meta[column] = counts
+                type_ = 'String'
+            meta[column]['suggestions'] = self.get_filters(type_)
+            meta[column]['type'] = type_
+
+        schema = {}
+        schema['fields'] = meta
+        schema['sampled'] = {'samples': self.NUM_SAMPLES, 'count': size}
+
         return schema
+
 
