@@ -102,6 +102,7 @@ class Spreadsheet(Ingest):
             df = load_matrix(filepath)
             maps = {}
             additions = []
+            remove = []
             # handle before filters
             matrices, filters = self.apply_before_filters(posted_data, src)
             for i, feature in enumerate(posted_data['matrixFeaturesOriginal']):
@@ -126,8 +127,9 @@ class Spreadsheet(Ingest):
                             if val != None:
                                 matrices.append( val )
                             # posted_data['matrixFilters'].pop(feature, None)
-                            posted_data['matrixFeatures'].remove(feature)
-                            posted_data['matrixFeaturesOriginal'].remove(feature)
+                            # posted_data['matrixFeatures'].remove(feature)
+                            # posted_data['matrixFeaturesOriginal'].remove(feature)
+                            remove.append(feature) 
                             filter_outputs.append('truth_labels.csv')
                         elif filt['type'] == 'convert':
                             col, posted_data['matrixTypes'][i] = self.apply_filter(filt['filter_id'], filt['parameters'], col) 
@@ -136,6 +138,11 @@ class Spreadsheet(Ingest):
                             add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
                 else:
                     add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
+            # remove extracted features
+            for feature in remove:
+                posted_data['matrixFeatures'].remove(feature)
+                posted_data['matrixFeaturesOriginal'].remove(feature)
+
             # if any features were added via filters, process them now
             process_additions(maps, additions, posted_data['matrixFeatures'])
             outputs = write_files(maps, posted_data['matrixFeatures'], posted_data['matrixFeaturesOriginal'], storepath)
