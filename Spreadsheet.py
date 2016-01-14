@@ -119,7 +119,7 @@ class Spreadsheet(Ingest):
                 if len(posted_data['matrixFilters'][feature]) > 0: # filters were selected
                     filt = posted_data['matrixFilters'][feature]
                     if filt['stage'] == 'after':
-                        if filt['type'] == 'extract':
+                        if filt['type'] == 'extract':#Having just extracts will cause program to break. Should not be allowed in genearl. 
                             conf = {}
                             conf['values'] = col
                             conf['storepath'] = storepath
