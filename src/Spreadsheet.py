@@ -10,8 +10,8 @@
 # permission of the Georgia Tech Research Institute.
 #****************************************************************/
 
-from dataloader.utils import *
-from dataloader.opals.spreadsheet_utils import *
+from bedrock.dataloader.utils import *
+from bedrock.dataloader.ingest.spreadsheet.spreadsheet_utils import *
 import time
 import csv
 import xlrd
