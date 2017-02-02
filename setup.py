@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
+from bedrock.core.opals import manage_opals
 
 here = path.abspath(path.dirname(__file__))
 
@@ -95,4 +96,10 @@ setup(
     entry_points={
     },
 )
+
+success = manage_opals("add","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
+if (success == False):
+    success = manage_opals("reload","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
+    if (success == False):
+        raise
 0
