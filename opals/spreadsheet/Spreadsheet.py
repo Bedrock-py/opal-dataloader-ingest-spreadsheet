@@ -11,7 +11,7 @@
 #****************************************************************/
 
 from bedrock.dataloader.utils import *
-from bedrock.dataloader.ingest.spreadsheet.spreadsheet_utils import *
+from spreadsheet_utils import *
 import time
 import csv
 import xlrd
@@ -119,7 +119,7 @@ class Spreadsheet(Ingest):
                 if len(posted_data['matrixFilters'][feature]) > 0: # filters were selected
                     filt = posted_data['matrixFilters'][feature]
                     if filt['stage'] == 'after':
-                        if filt['type'] == 'extract':#Having just extracts will cause program to break. Should not be allowed in genearl. 
+                        if filt['type'] == 'extract':#Having just extracts will cause program to break. Should not be allowed in genearl.
                             conf = {}
                             conf['values'] = col
                             conf['storepath'] = storepath
@@ -129,10 +129,10 @@ class Spreadsheet(Ingest):
                             # posted_data['matrixFilters'].pop(feature, None)
                             # posted_data['matrixFeatures'].remove(feature)
                             # posted_data['matrixFeaturesOriginal'].remove(feature)
-                            remove.append(feature) 
+                            remove.append(feature)
                             filter_outputs.append('truth_labels.csv')
                         elif filt['type'] == 'convert':
-                            col, posted_data['matrixTypes'][i] = self.apply_filter(filt['filter_id'], filt['parameters'], col) 
+                            col, posted_data['matrixTypes'][i] = self.apply_filter(filt['filter_id'], filt['parameters'], col)
                             add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
                         elif filt['type'] == 'add':
                             add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
@@ -262,5 +262,3 @@ class Spreadsheet(Ingest):
         schema['sampled'] = {'samples': self.NUM_SAMPLES, 'count': size}
 
         return schema
-
-
