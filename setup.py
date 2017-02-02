@@ -12,7 +12,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='bedrock.dataloader.ingest.spreadsheet',
+    name='opals.spreadsheet',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
@@ -30,7 +30,7 @@ setup(
     author_email='trevor.goodyear@gtri.gatech.edu',
 
     # Choose your license
-    license='LGPL',
+    license='GPL',
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -51,8 +51,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    package_dir = {'': 'src'},
-    packages=find_packages('src'),
+    packages=['opals.spreadsheet'],
+    namespace_packages=['opals'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -65,7 +65,7 @@ setup(
     install_requires=[
         'xlrd',
         'pandas',
-        ''
+        'bedrock'
         ],
 
     # List additional groups of dependencies here (e.g. development
