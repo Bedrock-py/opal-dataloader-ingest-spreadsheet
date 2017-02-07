@@ -2,15 +2,39 @@
 """
 
 from setuptools import setup, find_packages
+from setuptools.command.develop import develop
+from setuptools.command.install import install
+
 from codecs import open
 from os import path
-from bedrock.core.opals import manage_opals
 
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
+
+def opalRegistration():
+    from bedrock.core.opals import manage_opals
+    success = manage_opals("add","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
+    if (success == False):
+        success = manage_opals("reload","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
+        if (success == False):
+            raise
+
+
+class PostDevelopCommand(develop):
+    """Post-installation for development mode."""
+    def run(self):
+        opalRegistration()
+        develop.run(self)
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        opalRegistration()
+        install.run(self)
+
 
 setup(
     name='opals.spreadsheet',
@@ -54,6 +78,10 @@ setup(
     # simple. Or you can use find_packages().
     packages=['opals.spreadsheet'],
     namespace_packages=['opals'],
+    cmdclass={
+        'develop': PostDevelopCommand,
+        'install': PostInstallCommand,
+    },
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -97,9 +125,4 @@ setup(
     },
 )
 
-success = manage_opals("add","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
-if (success == False):
-    success = manage_opals("reload","ingest","opals.spreadsheet.Spreadsheet.Spreadsheet")
-    if (success == False):
-        raise
 0
