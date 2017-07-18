@@ -240,8 +240,7 @@ class Spreadsheet(Ingest):
         if header[0] == '1':
             data = pd.read_csv(filepath, header=None, nrows=self.NUM_SAMPLES)
         else:
-            with open(filepath, 'rbU') as f:
-                data = pd.read_csv(f, nrows=self.NUM_SAMPLES)
+            data = pd.read_csv(filepath, nrows=self.NUM_SAMPLES)
         numeric = data.describe()
         meta = {}
         for i, column in enumerate(data.columns):
@@ -259,6 +258,7 @@ class Spreadsheet(Ingest):
 
         schema = {}
         schema['fields'] = meta
+        schema['field_order'] = list(data.columns)
         schema['sampled'] = {'samples': self.NUM_SAMPLES, 'count': size}
 
         return schema
