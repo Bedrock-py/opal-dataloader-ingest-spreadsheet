@@ -94,9 +94,9 @@ class Spreadsheet(Ingest):
     # create a matrix using the provided features and file
     def ingest(self, posted_data, src):
         try:
-            filepath = src['rootdir'] + 'source/' + posted_data['sourceName'] + '.csv'
+            filepath = src['filepath']
         except Exception:
-            logging.error("sourceName not provided in POST data")
+            logging.error("Source does not have a filepath.")
             raise
 
         error = False
