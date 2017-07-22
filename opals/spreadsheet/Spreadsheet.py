@@ -21,6 +21,7 @@ import traceback
 import pandas as pd
 from collections import Counter
 from itertools import islice
+import logging
 
 class Spreadsheet(Ingest):
     def __init__(self):
@@ -38,7 +39,7 @@ class Spreadsheet(Ingest):
         files = os.listdir(filepath)
         if len(files) > 1: # means we have generated csv files from xls[x]
             for i,filename in enumerate(files):
-                if 'xls' in filename: # find the xls[x] file
+                if filename.endswith('.xls'): # find the xls[x] file
                     target = files[i]
                     break
         else:
@@ -92,12 +93,18 @@ class Spreadsheet(Ingest):
 
     # create a matrix using the provided features and file
     def ingest(self, posted_data, src):
-        filepath = src['rootdir'] + 'source/' + posted_data['sourceName'] + '.csv'
+        try:
+            filepath = src['rootdir'] + 'source/' + posted_data['sourceName'] + '.csv'
+        except Exception:
+            logging.error("sourceName not provided in POST data")
+            raise
+
         error = False
         matrices = []
         filter_outputs = []
         mat_id = getNewId()
         storepath = src['rootdir'] + mat_id + '/'
+
         try:
             df = load_matrix(filepath)
             maps = {}
@@ -105,7 +112,30 @@ class Spreadsheet(Ingest):
             remove = []
             # handle before filters
             matrices, filters = self.apply_before_filters(posted_data, src)
-            for i, feature in enumerate(posted_data['matrixFeaturesOriginal']):
+            try:
+                originalFeatures = posted_data['matrixFeaturesOriginal']
+            except KeyError:
+                originalFeatures = df.columns.values
+
+            try:
+                finalFeatures = posted_data['matrixFeatures']
+            except KeyError:
+                finalFeatures = df.columns.values
+
+            # Fix for keeping someone from having to use matrixTypes
+            try:
+                matrixTypes = posted_data['matrixTypes']
+                while len(matrixTypes) < len(originalFeatures):
+                    matrixTypes.append('Unknown')
+            except KeyError:
+                matrixTypes = ['Unknown' for x in originalFeatures]
+
+            try:
+                matrixFilters = posted_data['matrixFilters']
+            except KeyError:
+                matrixFilters = {f: dict() for f in originalFeatures}
+
+            for i, feature in enumerate(originalFeatures):
                 try:
                     df_feature = int(feature)
                 except ValueError:
@@ -116,8 +146,8 @@ class Spreadsheet(Ingest):
                     print "Unable to find feature", feature, "in dataframe. Available columns: ", df.columns.values.tolist()
                     raise
                 # if the selected feature has any after filters, apply them
-                if len(posted_data['matrixFilters'][feature]) > 0: # filters were selected
-                    filt = posted_data['matrixFilters'][feature]
+                if len(matrixFilters[feature]) > 0: # filters were selected
+                    filt = matrixFilters[feature]
                     if filt['stage'] == 'after':
                         if filt['type'] == 'extract':#Having just extracts will cause program to break. Should not be allowed in genearl.
                             conf = {}
@@ -132,20 +162,20 @@ class Spreadsheet(Ingest):
                             remove.append(feature)
                             filter_outputs.append('truth_labels.csv')
                         elif filt['type'] == 'convert':
-                            col, posted_data['matrixTypes'][i] = self.apply_filter(filt['filter_id'], filt['parameters'], col)
-                            add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
+                            col, matrixTypes[i] = self.apply_filter(filt['filter_id'], filt['parameters'], col)
+                            add_field(maps, finalFeatures[i], col, matrixTypes[i])
                         elif filt['type'] == 'add':
-                            add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
+                            add_field(maps, finalFeatures[i], col, matrixTypes[i])
                 else:
-                    add_field(maps, posted_data['matrixFeatures'][i], col, posted_data['matrixTypes'][i])
+                    add_field(maps, finalFeatures[i], col, matrixTypes[i])
             # remove extracted features
             for feature in remove:
-                posted_data['matrixFeatures'].remove(feature)
-                posted_data['matrixFeaturesOriginal'].remove(feature)
+                finalFeatures.remove(feature)
+                originalFeatures.remove(feature)
 
             # if any features were added via filters, process them now
-            process_additions(maps, additions, posted_data['matrixFeatures'])
-            outputs = write_files(maps, posted_data['matrixFeatures'], posted_data['matrixFeaturesOriginal'], storepath)
+            process_additions(maps, additions, finalFeatures)
+            outputs = write_files(maps, finalFeatures, originalFeatures, storepath)
             outputs.extend(filter_outputs)
             if not os.path.exists(storepath):
                 os.makedirs(storepath, 0775)
@@ -157,7 +187,7 @@ class Spreadsheet(Ingest):
                 'name': posted_data['matrixName'],
                 'mat_type': 'csv',
                 'outputs': outputs,
-                'filters': posted_data['matrixFilters']
+                'filters': matrixFilters
             }
             matrices.append(matrix)
 
